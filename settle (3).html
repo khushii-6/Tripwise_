@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Settle Up — TripWise</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+.settle-layout{display:grid;grid-template-columns:1fr 380px;gap:1.5rem;align-items:start;}
+.sticky-right{position:sticky;top:76px;}
+
+/* Trip pick */
+.trip-pick{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;}
+.trip-pick label{font-size:13px;font-weight:700;color:var(--text2);white-space:nowrap;}
+.trip-pick select{flex:1;max-width:320px;padding:9px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--night2);font-size:13px;font-family:inherit;color:var(--text);}
+
+/* Metric bar */
+.metric-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.5rem;}
+
+/* Balance card */
+.bal-card{
+  background:var(--night2);border:1px solid var(--border);
+  border-radius:var(--r);padding:1.25rem 1.5rem;
+  margin-bottom:.75rem;display:flex;align-items:center;gap:14px;
+  transition:all .2s;
+}
+.bal-card:hover{border-color:var(--border2);}
+.bal-body{flex:1;min-width:0;}
+.bal-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;}
+.bal-detail{font-size:12px;color:var(--muted);margin-top:3px;}
+.bal-amount{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;text-align:right;}
+.bal-tag{font-size:11px;font-weight:700;text-align:right;margin-top:2px;}
+.is-you{border-color:var(--teal-border);background:rgba(63,185,80,.04);}
+
+/* Per-category balance table */
+.cat-balance-section{margin-top:1.5rem;}
+.cat-bal-table{width:100%;border-collapse:collapse;}
+.cat-bal-table th{
+  text-align:left;font-size:11px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;
+  border-bottom:1px solid var(--border);
+}
+.cat-bal-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+.cat-bal-table tr:last-child td{border-bottom:none;}
+.cat-bal-table tr:hover td{background:var(--night3);}
+.cbt-cat{display:flex;align-items:center;gap:8px;}
+.cbt-icon{font-size:20px;width:28px;}
+.cbt-name{font-weight:600;color:var(--text2);}
+.cbt-payer{font-size:12px;color:var(--muted);}
+.cbt-amt{font-family:'Syne',sans-serif;font-weight:800;color:var(--text);}
+
+/* Settlement panel */
+.settle-card{
+  background:var(--night2);border:1px solid var(--border);
+  border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;
+}
+.pay-row{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;border-radius:var(--r-sm);
+  background:var(--night3);border:1px solid var(--border);
+  margin-bottom:8px;transition:all .2s;
+}
+.pay-row:hover{border-color:var(--border2);}
+.pay-row.mine{border-color:var(--orange-border);background:var(--orange-bg);}
+.pay-row.mine-recv{border-color:var(--teal-border);background:var(--teal-bg);}
+.pay-from-to{flex:1;min-width:0;}
+.pay-from{font-size:14px;font-weight:700;color:var(--text);}
+.pay-to{font-size:12px;color:var(--muted);margin-top:2px;}
+.pay-amt{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;white-space:nowrap;}
+.pay-arrow{color:var(--muted);font-size:16px;}
+
+/* Per-category settlements */
+.cat-settle-section{margin-top:1rem;}
+.cat-settle-group{margin-bottom:1rem;}
+.cat-settle-header{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;border-radius:var(--r-sm) var(--r-sm) 0 0;
+  background:var(--night3);border:1px solid var(--border);border-bottom:none;
+}
+.cat-settle-header .icon{font-size:18px;}
+.cat-settle-header .name{font-size:13px;font-weight:700;color:var(--text2);flex:1;}
+.cat-settle-header .collector{font-size:12px;color:var(--muted);}
+.cat-settle-body{border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r-sm) var(--r-sm);overflow:hidden;}
+.cs-row{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-bottom:1px solid var(--border);font-size:13px;
+}
+.cs-row:last-child{border-bottom:none;}
+.cs-row.mine-row{background:var(--orange-bg);}
+
+/* All settled */
+.all-settled{text-align:center;padding:3rem 1rem;}
+.all-settled .big{font-size:56px;margin-bottom:1rem;}
+.all-settled h3{font-size:22px;font-weight:800;color:var(--teal);}
+.all-settled p{color:var(--muted);font-size:14px;margin-top:.5rem;}
+
+/* Spending chart (horizontal bars) */
+.spend-chart{margin-top:.75rem;}
+.sc-row{display:flex;align-items:center;gap:10px;padding:6px 0;}
+.sc-label{font-size:12px;font-weight:600;color:var(--text2);width:90px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc-bar-wrap{flex:1;height:8px;background:var(--night3);border-radius:4px;overflow:hidden;}
+.sc-bar{height:100%;border-radius:4px;transition:width .5s ease;}
+.sc-val{font-size:12px;font-weight:700;color:var(--text);min-width:50px;text-align:right;}
+
+@media(max-width:960px){.settle-layout{grid-template-columns:1fr;}.sticky-right{position:static;}.metric-bar{grid-template-columns:1fr 1fr;}}
+@media(max-width:500px){.metric-bar{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<script>(function(){const u=localStorage.getItem('ts_user');if(!u)window.location.href='login.html';})();</script>
+
+<nav class="nav">
+  <a class="nav-logo" href="dashboard.html"><img src="logo.svg" style="width:28px;height:28px;border-radius:7px;vertical-align:middle;margin-right:6px;" alt="TripWise"/>Trip<span class="dot">W</span>ise</a>
+  <div class="nav-links">
+    <a class="nav-link" href="dashboard.html">Dashboard</a>
+    <a class="nav-link" href="expenses.html">Expenses</a>
+    <a class="nav-link active" href="settle.html">Settle Up</a>
+  </div>
+  <div class="nav-right">
+    <div class="nav-user" id="nav-user-btn" onclick="toggleMenu()">
+      <div class="avatar av-sm" id="nav-av"></div>
+      <span id="nav-nm"></span>
+    </div>
+    <div id="umenu" style="display:none;position:absolute;top:68px;right:1.5rem;background:var(--night2);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px;z-index:300;min-width:140px;">
+      <button style="width:100%;padding:8px 12px;border-radius:6px;background:none;border:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit;" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="page-hero-inner" style="display:flex;align-items:center;justify-content:space-between;">
+    <div><h1>Settle Up</h1><p>Smart settlements — per category, per payer, per person</p></div>
+    <a href="expenses.html" class="btn btn-outline btn-sm">+ Add Expense</a>
+  </div>
+</div>
+
+<main class="page-wrap" style="margin-top:1.5rem;">
+
+  <div class="trip-pick">
+    <label>Trip:</label>
+    <select id="trip-sw" onchange="switchTrip(this.value)">
+      <option value="">— Select a trip —</option>
+    </select>
+  </div>
+
+  <div id="no-trip" class="card" style="text-align:center;padding:4rem;">
+    <div style="font-size:48px;margin-bottom:1rem;">⚖️</div>
+    <h3 style="font-size:20px;margin-bottom:.5rem;">Select a trip to settle up</h3>
+    <p style="color:var(--muted);margin-bottom:1.5rem;">Choose a trip above or create one from the dashboard.</p>
+    <a href="dashboard.html" class="btn btn-primary">Go to Dashboard</a>
+  </div>
+
+  <!-- METRICS -->
+  <div class="metric-bar" id="metric-bar" style="display:none;">
+    <div class="metric"><div class="lbl">Total Spent</div><div class="val" id="m-total" style="color:var(--teal)">₹0</div><div class="sub">All expenses</div></div>
+    <div class="metric"><div class="lbl">Per Person</div><div class="val" id="m-per">₹0</div><div class="sub">Equal share</div></div>
+    <div class="metric"><div class="lbl">Your Balance</div><div class="val" id="m-mybal">₹0</div><div class="sub" id="m-mybal-sub"></div></div>
+    <div class="metric"><div class="lbl">Settlements</div><div class="val" id="m-txns" style="color:var(--orange)">0</div><div class="sub">Payments needed</div></div>
+  </div>
+
+  <div class="settle-layout" id="main-layout" style="display:none;">
+
+    <!-- LEFT: BALANCES + CATEGORY TABLE -->
+    <div>
+      <div class="slabel">Member Balances</div>
+      <div id="balances-list"></div>
+
+      <!-- Per-category balance breakdown -->
+      <div class="cat-balance-section">
+        <div class="slabel">Spending by Category</div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table class="cat-bal-table" id="cat-table">
+            <thead><tr>
+              <th>Category</th>
+              <th>Total</th>
+              <th>Designated Payer</th>
+              <th>Your Share</th>
+            </tr></thead>
+            <tbody id="cat-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Spending bar chart -->
+      <div style="margin-top:1.5rem;">
+        <div class="slabel">Who Paid Most</div>
+        <div class="card">
+          <div class="spend-chart" id="spend-chart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: SETTLEMENTS -->
+    <div class="sticky-right">
+
+      <!-- Overall settlements -->
+      <div class="settle-card">
+        <div class="slabel">Overall Settlement Plan</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Fewest payments to balance everyone</p>
+        <div id="settle-list"></div>
+      </div>
+
+      <!-- Per-category settlements -->
+      <div class="settle-card">
+        <div class="slabel">Per-Category Settlements</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:1rem;">Pay back the designated collector for each category</p>
+        <div id="cat-settle-list"></div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+function getDB(){try{return JSON.parse(localStorage.getItem('ts_db')||'{"users":{},"trips":[]}')}catch{return{users:{},trips:[]}}}
+function getUser(){try{return JSON.parse(localStorage.getItem('ts_user'))}catch{return null;}}
+function toast(msg,type=''){const w=document.getElementById('toast-wrap');const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;w.appendChild(t);setTimeout(()=>t.remove(),3200);}
+function initials(n){return(n||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+function memberColor(name){
+  const db=getDB();const u=Object.values(db.users).find(u=>u.name===name);
+  if(u)return u.color;
+  const c=['#3FB950','#F78166','#58A6FF','#BC8CFF','#E3B341','#FF9580'];
+  let h=0;for(let ch of name)h=(h*31+ch.charCodeAt(0))%c.length;return c[h];
+}
+function toggleMenu(){const m=document.getElementById('umenu');m.style.display=m.style.display==='none'?'block':'none';}
+document.addEventListener('click',e=>{if(!e.target.closest('#nav-user-btn')&&!e.target.closest('#umenu'))document.getElementById('umenu').style.display='none';});
+function logout(){localStorage.removeItem('ts_user');window.location.href='login.html';}
+
+const user=getUser();
+let activeTrip=null;
+
+(function(){
+  const av=document.getElementById('nav-av');
+  av.style.background=user.color;av.style.color='#0D1117';av.textContent=initials(user.name);
+  document.getElementById('nav-nm').textContent=user.name.split(' ')[0];
+})();
+
+function init(){
+  const db=getDB();
+  const myTrips=db.trips.filter(t=>t.members.some(m=>m===user.name)||t.ownerUsername===user.username);
+  const sel=document.getElementById('trip-sw');
+  sel.innerHTML='<option value="">— Select a trip —</option>'+myTrips.map(t=>`<option value="${t.id}">${t.emoji} ${t.name}</option>`).join('');
+  const saved=parseInt(localStorage.getItem('ts_active_trip'));
+  if(saved){sel.value=saved;switchTrip(saved);}
+}
+
+function switchTrip(id){
+  if(!id){document.getElementById('no-trip').style.display='block';document.getElementById('metric-bar').style.display='none';document.getElementById('main-layout').style.display='none';return;}
+  const db=getDB();
+  activeTrip=db.trips.find(t=>t.id==id)||null;
+  localStorage.setItem('ts_active_trip',id);
+  if(!activeTrip){return;}
+  document.getElementById('no-trip').style.display='none';
+  document.getElementById('metric-bar').style.display='grid';
+  document.getElementById('main-layout').style.display='grid';
+  render();
+}
+
+/* ── Core balance computation ── */
+function computeBalances(){
+  const b={};
+  activeTrip.members.forEach(m=>b[m]=0);
+  activeTrip.expenses.forEach(e=>{
+    b[e.payer]=(b[e.payer]||0)+e.amount;
+    e.splitAmong.forEach(m=>{b[m]=(b[m]||0)-e.amount/e.splitAmong.length;});
+  });
+  return b;
+}
+
+/* ── Optimal settlement algorithm ── */
+function computeSettlements(balances){
+  const creds=Object.entries(balances).filter(([,v])=>v>0.01).sort((a,b)=>b[1]-a[1]);
+  const debs =Object.entries(balances).filter(([,v])=>v<-0.01).sort((a,b)=>a[1]-b[1]);
+  const s=[];let ci=0,di=0;
+  while(ci<creds.length&&di<debs.length){
+    const t=Math.min(creds[ci][1],Math.abs(debs[di][1]));
+    if(t>0.01)s.push({from:debs[di][0],to:creds[ci][0],amount:t});
+    creds[ci][1]-=t;debs[di][1]+=t;
+    if(creds[ci][1]<0.01)ci++;if(Math.abs(debs[di][1])<0.01)di++;
+  }
+  return s;
+}
+
+/* ── Per-category settlements ── 
+   For each category: find the designated collector (catPayer),
+   then each member who was split in that cat pays their share to the collector.
+   If payer≠collector, payer also gets reimbursed by the collector.
+*/
+function computeCatSettlements(){
+  const cats={};
+  const cpKey=`ts_catpayer_${activeTrip.id}`;
+  let catPayers={};try{catPayers=JSON.parse(localStorage.getItem(cpKey)||'{}');}catch{}
+
+  activeTrip.expenses.forEach(e=>{
+    const cat=e.cat||'📦 Other';
+    if(!cats[cat])cats[cat]={cat,total:0,expenses:[],collector:catPayers[cat]||null};
+    cats[cat].expenses.push(e);
+    cats[cat].total+=e.amount;
+    if(!cats[cat].collector)cats[cat].collector=e.catPayer||e.payer;
+  });
+
+  // For each category, compute who owes the collector
+  const catResults=[];
+  Object.values(cats).forEach(({cat,total,expenses,collector})=>{
+    // net per-member for this category
+    const net={};
+    activeTrip.members.forEach(m=>net[m]=0);
+    expenses.forEach(e=>{
+      net[e.payer]=(net[e.payer]||0)+e.amount;
+      e.splitAmong.forEach(m=>{net[m]=(net[m]||0)-e.amount/e.splitAmong.length;});
+    });
+    // everyone pays/receives from collector
+    const payments=[];
+    Object.entries(net).forEach(([member,bal])=>{
+      if(member===collector)return;
+      if(bal<-0.01){
+        // member owes money → pays collector
+        payments.push({from:member,to:collector,amount:Math.abs(bal)});
+      } else if(bal>0.01){
+        // member is owed → collector pays them
+        payments.push({from:collector,to:member,amount:bal});
+      }
+    });
+    if(payments.length||total>0){
+      catResults.push({cat,total,collector,payments});
+    }
+  });
+  return catResults;
+}
+
+/* ── RENDER ── */
+function render(){
+  const curr=activeTrip.currency;
+  const total=activeTrip.expenses.reduce((s,e)=>s+e.amount,0);
+  const per=activeTrip.members.length?total/activeTrip.members.length:0;
+  const balances=computeBalances();
+  const settlements=computeSettlements(balances);
+  const myBal=balances[user.name]||0;
+
+  // Metrics
+  document.getElementById('m-total').textContent=curr+total.toFixed(0);
+  document.getElementById('m-per').textContent=curr+per.toFixed(0);
+  const mbEl=document.getElementById('m-mybal');
+  mbEl.textContent=(myBal>=0?'+':'')+curr+Math.abs(myBal).toFixed(2);
+  mbEl.style.color=myBal>0.5?'var(--teal)':myBal<-0.5?'var(--orange)':'var(--muted)';
+  document.getElementById('m-mybal-sub').textContent=myBal>0.5?'owed to you':myBal<-0.5?'you owe':'all good!';
+  document.getElementById('m-txns').textContent=settlements.length;
+
+  // Balances
+  const bl=document.getElementById('balances-list');
+  bl.innerHTML=activeTrip.members
+    .sort((a,b)=>(balances[b]||0)-(balances[a]||0))
+    .map(m=>{
+      const b=balances[m]||0;
+      const paid=activeTrip.expenses.filter(e=>e.payer===m).reduce((s,e)=>s+e.amount,0);
+      const share=activeTrip.expenses.reduce((s,e)=>e.splitAmong.includes(m)?s+e.amount/e.splitAmong.length:s,0);
+      const isMe=m===user.name;
+      const cls=b>0.5?'var(--teal)':b<-0.5?'var(--orange)':'var(--muted)';
+      const tag=b>0.5?'gets back':b<-0.5?'owes':'settled ✓';
+      const pct=total>0?Math.round((paid/total)*100):0;
+      return `<div class="bal-card fade-in ${isMe?'is-you':''}">
+        <div class="avatar av-lg" style="background:${memberColor(m)};color:#0D1117;">${initials(m)}</div>
+        <div class="bal-body">
+          <div class="bal-name">${m}${isMe?' <span style="font-size:11px;color:var(--teal);">(you)</span>':''}</div>
+          <div class="bal-detail">Paid ${curr}${paid.toFixed(0)} · Share ${curr}${share.toFixed(0)} · ${pct}% of total</div>
+          <div class="prog" style="margin-top:6px;"><div class="prog-fill" style="width:${pct}%;background:${memberColor(m)};"></div></div>
+        </div>
+        <div>
+          <div class="bal-amount" style="color:${cls}">${b>0.01?'+':''}${curr}${Math.abs(b).toFixed(2)}</div>
+          <div class="bal-tag" style="color:${cls}">${tag}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+  // Overall settlements
+  const sl=document.getElementById('settle-list');
+  if(!settlements.length){
+    sl.innerHTML=`<div class="all-settled"><div class="big">🎉</div><h3>All Settled!</h3><p>No payments needed.</p></div>`;
+  } else {
+    sl.innerHTML=settlements.map(s=>{
+      const isMine=s.from===user.name;
+      const isMineRecv=s.to===user.name;
+      const cls=isMine?'mine':isMineRecv?'mine-recv':'';
+      return `<div class="pay-row ${cls}">
+        <div class="avatar av-sm" style="background:${memberColor(s.from)};color:#0D1117;font-size:9px;">${initials(s.from)}</div>
+        <span class="pay-arrow">→</span>
+        <div class="avatar av-sm" style="background:${memberColor(s.to)};color:#0D1117;font-size:9px;">${initials(s.to)}</div>
+        <div class="pay-from-to">
+          <div class="pay-from">${s.from} → ${s.to}</div>
+          <div class="pay-to">${isMine?'⚠ You need to pay':isMineRecv?'✓ You receive':''}</div>
+        </div>
+        <div class="pay-amt" style="color:${isMine?'var(--orange)':isMineRecv?'var(--teal)':'var(--text)'}">${curr}${s.amount.toFixed(2)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Category balance table
+  const cpKey=`ts_catpayer_${activeTrip.id}`;
+  let catPayers={};try{catPayers=JSON.parse(localStorage.getItem(cpKey)||'{}');}catch{}
+  const catTotals={};
+  activeTrip.expenses.forEach(e=>{catTotals[e.cat]=(catTotals[e.cat]||0)+e.amount;});
+  const tbody=document.getElementById('cat-tbody');
+  tbody.innerHTML=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>{
+    const icon=cat.split(' ')[0];
+    const name=cat.split(' ').slice(1).join(' ');
+    const collector=catPayers[cat]||'Auto (payer)';
+    const myShare=activeTrip.expenses.filter(e=>e.cat===cat&&e.splitAmong.includes(user.name)).reduce((s,e)=>s+e.amount/e.splitAmong.length,0);
+    return `<tr>
+      <td><div class="cbt-cat"><span class="cbt-icon">${icon}</span><span class="cbt-name">${name}</span></div></td>
+      <td class="cbt-amt">${curr}${amt.toFixed(0)}</td>
+      <td><span class="tag tag-teal">${collector}</span></td>
+      <td class="cbt-amt" style="color:var(--orange)">${curr}${myShare.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+
+  // Per-category settlements
+  const catS=computeCatSettlements();
+  const csl=document.getElementById('cat-settle-list');
+  if(!catS.length){
+    csl.innerHTML='<div style="text-align:center;padding:1.5rem;color:var(--muted);font-size:13px;">No category data yet</div>';
+  } else {
+    csl.innerHTML=catS.map(({cat,total,collector,payments})=>{
+      const icon=cat.split(' ')[0];
+      const name=cat.split(' ').slice(1).join(' ');
+      const pRows=payments.map(p=>{
+        const mine=p.from===user.name;
+        return `<div class="cs-row ${mine?'mine-row':''}">
+          <div class="avatar av-sm" style="background:${memberColor(p.from)};color:#0D1117;font-size:9px;">${initials(p.from)}</div>
+          <span style="color:var(--muted);font-size:12px;">→</span>
+          <div class="avatar av-sm" style="background:${memberColor(p.to)};color:#0D1117;font-size:9px;">${initials(p.to)}</div>
+          <span style="font-size:13px;font-weight:600;flex:1;color:${mine?'var(--orange)':'var(--text2)'};">${p.from} → ${p.to}</span>
+          <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:${mine?'var(--orange)':'var(--text)'};">${curr}${p.amount.toFixed(2)}</span>
+        </div>`;
+      }).join('');
+      return `<div class="cat-settle-group">
+        <div class="cat-settle-header">
+          <span class="icon">${icon}</span>
+          <span class="name">${name} <span style="color:var(--muted);font-weight:400;">${curr}${total.toFixed(0)}</span></span>
+          <span class="collector">Collector: <strong style="color:var(--teal)">${collector}</strong></span>
+        </div>
+        <div class="cat-settle-body">${pRows||'<div class="cs-row" style="color:var(--muted);">All settled for this category</div>'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Spend chart
+  const payerSpend={};
+  activeTrip.members.forEach(m=>payerSpend[m]=0);
+  activeTrip.expenses.forEach(e=>payerSpend[e.payer]=(payerSpend[e.payer]||0)+e.amount);
+  const maxSpend=Math.max(...Object.values(payerSpend),1);
+  const colors=['#3FB950','#58A6FF','#BC8CFF','#E3B341','#F78166','#FF9580'];
+  document.getElementById('spend-chart').innerHTML=
+    Object.entries(payerSpend).sort((a,b)=>b[1]-a[1]).map(([m,amt],i)=>`
+      <div class="sc-row">
+        <div class="sc-label">${m}</div>
+        <div class="sc-bar-wrap"><div class="sc-bar" style="width:${Math.round(amt/maxSpend*100)}%;background:${memberColor(m)};"></div></div>
+        <div class="sc-val">${curr}${amt.toFixed(0)}</div>
+      </div>`).join('');
+}
+
+init();
+</script>
+</body>
+</html>
