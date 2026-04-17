@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>TripWise — Sign In</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--night);}
+
+.auth-wrap{
+  width:100%;max-width:440px;padding:1.5rem;
+}
+
+.logo-block{text-align:center;margin-bottom:2.5rem;}
+.logo-mark{
+  width:56px;height:56px;border-radius:14px;
+  background:var(--teal-bg);border:1px solid var(--teal-border);
+  display:inline-flex;align-items:center;justify-content:center;
+  font-size:28px;margin-bottom:1rem;
+}
+.logo-name{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--text);
+}
+.logo-name .dot{color:var(--teal);}
+.logo-tag{font-size:14px;color:var(--muted);margin-top:4px;}
+
+.auth-card{
+  background:var(--night2);border:1px solid var(--border);
+  border-radius:var(--r-lg);overflow:hidden;
+}
+
+.auth-tabs{display:flex;border-bottom:1px solid var(--border);}
+.auth-tab{
+  flex:1;padding:14px;text-align:center;
+  font-size:13px;font-weight:700;color:var(--muted);
+  cursor:pointer;border:none;background:none;font-family:inherit;
+  transition:all .15s;border-bottom:2px solid transparent;margin-bottom:-1px;
+}
+.auth-tab.active{color:var(--teal);border-bottom-color:var(--teal);}
+.auth-tab:hover:not(.active){color:var(--text);}
+
+.auth-body{padding:1.75rem;}
+.auth-panel{display:none;}
+.auth-panel.active{display:block;}
+
+.field{margin-bottom:1rem;}
+.field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px;}
+
+.input-icon-wrap{position:relative;}
+.input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;}
+.input-icon-wrap input{padding-left:36px;}
+
+.auth-btn{
+  width:100%;padding:12px;border-radius:var(--r-sm);
+  background:var(--teal);color:var(--night);
+  border:none;font-size:14px;font-weight:800;font-family:inherit;
+  cursor:pointer;transition:all .15s;margin-top:.5rem;
+  letter-spacing:.02em;
+}
+.auth-btn:hover{background:var(--teal2);transform:translateY(-1px);}
+.auth-btn:active{transform:none;}
+
+.auth-divider{
+  text-align:center;font-size:12px;color:var(--muted);
+  margin:1.25rem 0;position:relative;
+}
+.auth-divider::before,.auth-divider::after{
+  content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--border);
+}
+.auth-divider::before{left:0;}
+.auth-divider::after{right:0;}
+
+.demo-btn{
+  width:100%;padding:10px;border-radius:var(--r-sm);
+  background:var(--night3);color:var(--text2);
+  border:1px solid var(--border);font-size:13px;font-weight:600;font-family:inherit;
+  cursor:pointer;transition:all .15s;
+}
+.demo-btn:hover{border-color:var(--border2);background:var(--night3);}
+
+.auth-error{
+  background:var(--orange-bg);border:1px solid var(--orange-border);
+  color:var(--orange);border-radius:var(--r-sm);padding:10px 14px;
+  font-size:13px;font-weight:600;margin-bottom:1rem;display:none;
+}
+
+.avatar-pick{
+  display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;
+}
+.av-pick-btn{
+  width:44px;height:44px;border-radius:50%;
+  border:2px solid transparent;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:16px;
+  transition:all .15s;color:#fff;
+}
+.av-pick-btn.selected{border-color:var(--teal);box-shadow:0 0 0 2px rgba(63,185,80,.3);}
+
+.terms{font-size:11px;color:var(--muted);text-align:center;margin-top:1rem;line-height:1.5;}
+
+/* BG decoration */
+.bg-rings{
+  position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
+}
+.ring{
+  position:absolute;border-radius:50%;border:1px solid rgba(63,185,80,.06);
+}
+.ring1{width:600px;height:600px;top:50%;left:50%;transform:translate(-50%,-50%);}
+.ring2{width:900px;height:900px;top:50%;left:50%;transform:translate(-50%,-50%);}
+.ring3{width:1200px;height:1200px;top:50%;left:50%;transform:translate(-50%,-50%);}
+</style>
+</head>
+<body>
+
+<div class="bg-rings">
+  <div class="ring ring1"></div>
+  <div class="ring ring2"></div>
+  <div class="ring ring3"></div>
+</div>
+
+<div class="auth-wrap fade-in" style="position:relative;z-index:1;">
+  <div class="logo-block">
+    <div class="logo-mark" style="background:none;border:none;padding:0;"><img src="logo.svg" style="width:56px;height:56px;border-radius:14px;" alt="TripWise"/></div>
+    <div class="logo-name">Trip<span class="dot">W</span>ise</div>
+    <div class="logo-tag">Travel smart. Split fairly. Settle instantly.</div>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+      <button class="auth-tab" onclick="switchTab('register')">Create Account</button>
+    </div>
+
+    <div class="auth-body">
+      <div id="auth-error" class="auth-error"></div>
+
+      <!-- LOGIN -->
+      <div class="auth-panel active" id="panel-login">
+        <div class="field">
+          <label>Username</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">@</span>
+            <input type="text" id="login-user" placeholder="your username" autocomplete="username"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password"
+              onkeydown="if(event.key==='Enter')doLogin()"/>
+          </div>
+        </div>
+        <button class="auth-btn" onclick="doLogin()">Sign In →</button>
+
+        <div class="auth-divider">or try a demo account</div>
+        <button class="demo-btn" onclick="demoLogin('arjun')">👤 Sign in as Arjun (Demo)</button>
+        <div style="height:6px;"></div>
+        <button class="demo-btn" onclick="demoLogin('priya')">👤 Sign in as Priya (Demo)</button>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="auth-panel" id="panel-register">
+        <div class="field">
+          <label>Your name</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">✦</span>
+            <input type="text" id="reg-name" placeholder="Full name"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Username</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">@</span>
+            <input type="text" id="reg-user" placeholder="pick a username"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="reg-pass" placeholder="min 4 characters"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Pick your avatar color</label>
+          <div class="avatar-pick" id="avatar-pick">
+            <button class="av-pick-btn selected" data-color="#3FB950" style="background:#3FB950">AR</button>
+            <button class="av-pick-btn" data-color="#F78166" style="background:#F78166">AR</button>
+            <button class="av-pick-btn" data-color="#58A6FF" style="background:#58A6FF">AR</button>
+            <button class="av-pick-btn" data-color="#BC8CFF" style="background:#BC8CFF">AR</button>
+            <button class="av-pick-btn" data-color="#E3B341" style="background:#E3B341">AR</button>
+            <button class="av-pick-btn" data-color="#FF7A52" style="background:#FF7A52">AR</button>
+            <button class="av-pick-btn" data-color="#79C0FF" style="background:#79C0FF">AR</button>
+            <button class="av-pick-btn" data-color="#7EE787" style="background:#7EE787">AR</button>
+          </div>
+        </div>
+        <button class="auth-btn" onclick="doRegister()">Create Account →</button>
+        <div class="terms">By signing up you agree to split expenses fairly and have a great trip.</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+function getDB(){try{return JSON.parse(localStorage.getItem('ts_db')||'{"users":{},"trips":[]}')}catch{return{users:{},trips:[]}}}
+function saveDB(d){localStorage.setItem('ts_db',JSON.stringify(d));}
+function toast(msg,type=''){const w=document.getElementById('toast-wrap');const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;w.appendChild(t);setTimeout(()=>t.remove(),3200);}
+function showError(msg){const el=document.getElementById('auth-error');el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',4000);}
+
+// Seed demo accounts
+(function seedDemo(){
+  const db=getDB();
+  if(!db.users['arjun']){
+    db.users['arjun']={username:'arjun',name:'Arjun Mehta',password:'demo123',color:'#3FB950',createdAt:new Date().toISOString()};
+  }
+  if(!db.users['priya']){
+    db.users['priya']={username:'priya',name:'Priya Sharma',password:'demo123',color:'#F78166',createdAt:new Date().toISOString()};
+  }
+  saveDB(db);
+})();
+
+let selectedColor='#3FB950';
+
+// Avatar picker
+document.getElementById('avatar-pick').addEventListener('click',e=>{
+  const btn=e.target.closest('.av-pick-btn');if(!btn)return;
+  document.querySelectorAll('.av-pick-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');selectedColor=btn.dataset.color;
+  // update initials preview
+  const name=document.getElementById('reg-name').value||'AR';
+  const ini=name.trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.querySelectorAll('.av-pick-btn').forEach(b=>b.textContent=ini);
+});
+document.getElementById('reg-name').addEventListener('input',function(){
+  const ini=this.value.trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()||'AR';
+  document.querySelectorAll('.av-pick-btn').forEach(b=>b.textContent=ini);
+});
+
+function switchTab(t){
+  document.querySelectorAll('.auth-tab').forEach((b,i)=>b.classList.toggle('active',['login','register'][i]===t));
+  document.querySelectorAll('.auth-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  document.getElementById('auth-error').style.display='none';
+}
+
+function doLogin(){
+  const user=document.getElementById('login-user').value.trim().toLowerCase();
+  const pass=document.getElementById('login-pass').value;
+  if(!user||!pass){showError('Please fill in all fields.');return;}
+  const db=getDB();
+  const u=db.users[user];
+  if(!u||u.password!==pass){showError('Wrong username or password.');return;}
+  localStorage.setItem('ts_user',JSON.stringify({username:u.username,name:u.name,color:u.color}));
+  toast('Welcome back to TripWise, '+u.name+'! ✈','ok');
+  setTimeout(()=>window.location.href='dashboard.html',700);
+}
+
+function demoLogin(username){
+  document.getElementById('login-user').value=username;
+  document.getElementById('login-pass').value='demo123';
+  doLogin();
+}
+
+function doRegister(){
+  const name=document.getElementById('reg-name').value.trim();
+  const user=document.getElementById('reg-user').value.trim().toLowerCase();
+  const pass=document.getElementById('reg-pass').value;
+  if(!name||!user||!pass){showError('Please fill in all fields.');return;}
+  if(pass.length<4){showError('Password must be at least 4 characters.');return;}
+  const db=getDB();
+  if(db.users[user]){showError('Username already taken. Try another.');return;}
+  db.users[user]={username:user,name,password:pass,color:selectedColor,createdAt:new Date().toISOString()};
+  saveDB(db);
+  localStorage.setItem('ts_user',JSON.stringify({username:user,name,color:selectedColor}));
+  toast('Welcome to TripWise, '+name+'! 🎉','ok');
+  setTimeout(()=>window.location.href='dashboard.html',700);
+}
+</script>
+</body>
+</html>
