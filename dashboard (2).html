@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Dashboard — TripWise</title>
+<link rel="stylesheet" href="styles.css"/>
+<style>
+.dash-hero{
+  background:var(--night2);border-bottom:1px solid var(--border);
+  padding:2rem;position:relative;overflow:hidden;
+}
+.dash-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 40% 100% at 0% 50%,rgba(63,185,80,.07) 0%,transparent 60%);
+}
+.dash-hero-inner{position:relative;max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:16px;}
+.welcome-text h1{font-size:clamp(20px,3vw,28px);font-weight:800;}
+.welcome-text p{color:var(--muted);font-size:14px;margin-top:2px;}
+.hero-actions{margin-left:auto;display:flex;gap:8px;}
+
+/* Trip cards */
+.trips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.trip-card{
+  background:var(--night2);border:1px solid var(--border);
+  border-radius:var(--r);padding:1.25rem;cursor:pointer;
+  transition:all .2s;position:relative;overflow:hidden;
+}
+.trip-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:var(--teal);transform:scaleX(0);transform-origin:left;
+  transition:transform .25s ease;
+}
+.trip-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.trip-card:hover::after{transform:scaleX(1);}
+.trip-card-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:1rem;}
+.trip-emoji{font-size:32px;}
+.trip-name{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);}
+.trip-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+.trip-meta{display:flex;gap:1.25rem;padding-top:1rem;border-top:1px solid var(--border);}
+.trip-meta-item strong{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;display:block;color:var(--text);}
+.trip-meta-item span{font-size:11px;color:var(--muted);}
+.trip-members{display:flex;}
+.trip-members .avatar{margin-left:-5px;border:2px solid var(--night2);}
+.trip-members .avatar:first-child{margin-left:0;}
+
+/* My balance card inside each trip */
+.my-balance{
+  display:flex;align-items:center;gap:8px;
+  margin-top:10px;padding:8px 12px;border-radius:var(--r-sm);
+  font-size:13px;font-weight:700;
+}
+.my-balance.owed  {background:var(--teal-bg);color:var(--teal);}
+.my-balance.owes  {background:var(--orange-bg);color:var(--orange);}
+.my-balance.settled{background:var(--night3);color:var(--muted);}
+
+/* New trip panel */
+.new-trip-panel{
+  background:var(--night2);border:1px solid var(--border);
+  border-radius:var(--r);padding:1.5rem;
+  position:sticky;top:76px;
+}
+.dash-layout{
+  display:grid;grid-template-columns:1fr 340px;gap:1.5rem;align-items:start;
+}
+
+/* Activity feed */
+.activity-item{
+  display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);
+}
+.activity-item:last-child{border-bottom:none;}
+.act-icon{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+  background:var(--night3);
+}
+.act-body{flex:1;min-width:0;}
+.act-text{font-size:13px;color:var(--text2);}
+.act-text strong{color:var(--text);}
+.act-time{font-size:11px;color:var(--muted);margin-top:2px;}
+.act-amount{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--teal);flex-shrink:0;}
+
+/* Stats bar */
+.stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;}
+
+/* No trips state */
+.empty-trips{
+  grid-column:1/-1;
+  background:var(--night2);border:1px dashed var(--border);
+  border-radius:var(--r);padding:4rem;text-align:center;
+}
+.empty-trips h3{font-size:20px;margin:1rem 0 .5rem;}
+.empty-trips p{color:var(--muted);font-size:14px;margin-bottom:1.5rem;}
+
+/* Member input */
+.member-row{display:flex;gap:6px;}
+.member-row input{flex:1;}
+
+/* Currency / emoji row */
+.icon-select{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+.icon-btn{
+  padding:5px 10px;border-radius:6px;border:1px solid var(--border);
+  background:var(--night3);color:var(--muted);font-size:13px;cursor:pointer;
+  font-family:inherit;transition:all .15s;
+}
+.icon-btn.active{background:var(--teal-bg);border-color:var(--teal-border);color:var(--teal);}
+
+@media(max-width:960px){.dash-layout{grid-template-columns:1fr;}.new-trip-panel{position:static;}.stats-bar{grid-template-columns:1fr 1fr;}}
+@media(max-width:500px){.stats-bar{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- AUTH GUARD -->
+<script>
+(function(){
+  const u=localStorage.getItem('ts_user');
+  if(!u){window.location.href='login.html';}
+})();
+</script>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo"><img src="logo.svg" style="width:28px;height:28px;border-radius:7px;vertical-align:middle;margin-right:6px;" alt="TripWise"/>Trip<span class="dot">W</span>ise</div>
+  <div class="nav-links">
+    <a class="nav-link active" href="dashboard.html">Dashboard</a>
+    <a class="nav-link" href="expenses.html">Expenses</a>
+    <a class="nav-link" href="settle.html">Settle Up</a>
+  </div>
+  <div class="nav-right">
+    <div class="nav-user" id="nav-user-btn" onclick="toggleUserMenu()">
+      <div class="avatar av-sm" id="nav-avatar"></div>
+      <span id="nav-name"></span>
+      <span style="color:var(--muted);font-size:11px;">▾</span>
+    </div>
+    <div id="user-menu" style="display:none;position:absolute;top:68px;right:1.5rem;background:var(--night2);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px;z-index:300;min-width:160px;">
+      <div id="menu-uname" style="padding:8px 12px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);margin-bottom:4px;"></div>
+      <button style="width:100%;padding:8px 12px;border-radius:6px;background:none;border:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;text-align:left;font-family:inherit;" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="dash-hero">
+  <div class="dash-hero-inner">
+    <div class="avatar av-lg" id="hero-avatar"></div>
+    <div class="welcome-text">
+      <h1 id="welcome-msg">Welcome back!</h1>
+      <p id="welcome-sub">Your TripWise dashboard — trips, balances & activity</p>
+    </div>
+    <div class="hero-actions">
+      <a href="expenses.html" class="btn btn-outline btn-sm">+ Add Expense</a>
+      <a href="settle.html" class="btn btn-primary btn-sm">Settle Up</a>
+    </div>
+  </div>
+</div>
+
+<main class="page-wrap">
+
+  <!-- STATS BAR -->
+  <div class="stats-bar" id="stats-bar">
+    <div class="metric"><div class="lbl">Total Trips</div><div class="val" id="stat-trips">0</div></div>
+    <div class="metric"><div class="lbl">You've Paid</div><div class="val" id="stat-paid" style="color:var(--teal)">₹0</div></div>
+    <div class="metric"><div class="lbl">Net Balance</div><div class="val" id="stat-net">₹0</div></div>
+  </div>
+
+  <div class="dash-layout">
+
+    <!-- TRIPS + ACTIVITY -->
+    <div>
+      <div class="slabel">My Trips</div>
+      <div class="trips-grid" id="trips-grid">
+        <div class="empty-trips">
+          <div style="font-size:48px;">🌍</div>
+          <h3>No trips yet</h3>
+          <p>Create your first trip from the panel on the right.</p>
+        </div>
+      </div>
+
+      <div class="slabel" style="margin-top:1.5rem;">Recent Activity</div>
+      <div class="card" id="activity-feed">
+        <div style="text-align:center;padding:2rem;color:var(--muted);font-size:14px;">No activity yet</div>
+      </div>
+    </div>
+
+    <!-- NEW TRIP PANEL -->
+    <div class="new-trip-panel">
+      <div class="slabel">New Trip</div>
+
+      <div class="field" style="margin-bottom:.75rem;">
+        <label>Trip name</label>
+        <input id="trip-name" type="text" placeholder="e.g. Manali Trek 2026"/>
+      </div>
+
+      <div class="field" style="margin-bottom:.75rem;">
+        <label>Emoji</label>
+        <div class="icon-select" id="emoji-sel">
+          <button class="icon-btn active" data-v="🌴">🌴</button>
+          <button class="icon-btn" data-v="🏔️">🏔️</button>
+          <button class="icon-btn" data-v="🏖️">🏖️</button>
+          <button class="icon-btn" data-v="✈️">✈️</button>
+          <button class="icon-btn" data-v="🏕️">🏕️</button>
+          <button class="icon-btn" data-v="🚢">🚢</button>
+          <button class="icon-btn" data-v="🗺️">🗺️</button>
+          <button class="icon-btn" data-v="🎉">🎉</button>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:.75rem;">
+        <div class="field"><label>Start</label><input id="t-start" type="date"/></div>
+        <div class="field"><label>End</label><input id="t-end" type="date"/></div>
+      </div>
+
+      <div class="field" style="margin-bottom:.75rem;">
+        <label>Currency</label>
+        <div class="icon-select" id="curr-sel">
+          <button class="icon-btn active" data-v="₹">₹ INR</button>
+          <button class="icon-btn" data-v="$">$ USD</button>
+          <button class="icon-btn" data-v="€">€ EUR</button>
+          <button class="icon-btn" data-v="£">£ GBP</button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:.75rem;">
+        <label>Add members</label>
+        <div class="member-row">
+          <input id="mem-input" type="text" placeholder="Member name"/>
+          <button class="btn btn-outline btn-sm" onclick="addMember()">Add</button>
+        </div>
+        <div style="margin-top:6px;" id="mem-chips"></div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">You are automatically added as a member.</div>
+      </div>
+
+      <button class="btn btn-primary btn-full" style="padding:11px;margin-top:.5rem;" onclick="createTrip()">Create Trip ✦</button>
+    </div>
+
+  </div>
+</main>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+/* ── Helpers ── */
+function getDB(){try{return JSON.parse(localStorage.getItem('ts_db')||'{"users":{},"trips":[]}')}catch{return{users:{},trips:[]}}}
+function saveDB(d){localStorage.setItem('ts_db',JSON.stringify(d));}
+function getUser(){try{return JSON.parse(localStorage.getItem('ts_user'))}catch{return null;}}
+function toast(msg,type=''){const w=document.getElementById('toast-wrap');const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;w.appendChild(t);setTimeout(()=>t.remove(),3200);}
+function initials(n){return(n||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+function fmtDate(d){if(!d)return'';const p=d.split('-');return`${p[2]}/${p[1]}/${p[0].slice(2)}`;}
+function fmtAgo(iso){
+  const d=new Date(iso),n=new Date();const s=Math.floor((n-d)/1000);
+  if(s<60)return'just now';if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';
+}
+
+const user=getUser();
+
+/* ── Nav setup ── */
+function setupNav(){
+  const av=document.getElementById('nav-avatar');
+  av.style.background=user.color;av.style.color='#0D1117';av.textContent=initials(user.name);
+  document.getElementById('nav-name').textContent=user.name.split(' ')[0];
+  document.getElementById('hero-avatar').style.background=user.color;
+  document.getElementById('hero-avatar').style.color='#0D1117';
+  document.getElementById('hero-avatar').textContent=initials(user.name);
+  document.getElementById('welcome-msg').textContent='Hey, '+user.name.split(' ')[0]+'! 👋';
+  document.getElementById('menu-uname').textContent='@'+user.username;
+}
+
+function toggleUserMenu(){
+  const m=document.getElementById('user-menu');m.style.display=m.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#nav-user-btn')&&!e.target.closest('#user-menu')){
+    document.getElementById('user-menu').style.display='none';
+  }
+});
+
+function logout(){
+  localStorage.removeItem('ts_user');
+  localStorage.removeItem('ts_active_trip');
+  window.location.href='login.html';
+}
+
+/* ── Selectors ── */
+let selEmoji='🌴',selCurr='₹',members=[];
+
+document.getElementById('emoji-sel').addEventListener('click',e=>{
+  const b=e.target.closest('.icon-btn');if(!b)return;
+  document.querySelectorAll('#emoji-sel .icon-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');selEmoji=b.dataset.v;
+});
+document.getElementById('curr-sel').addEventListener('click',e=>{
+  const b=e.target.closest('.icon-btn');if(!b)return;
+  document.querySelectorAll('#curr-sel .icon-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');selCurr=b.dataset.v;
+});
+document.getElementById('mem-input').addEventListener('keydown',e=>{if(e.key==='Enter')addMember();});
+
+function addMember(){
+  const inp=document.getElementById('mem-input');
+  const n=inp.value.trim();
+  if(!n){return;}
+  if(n.toLowerCase()===user.name.toLowerCase()||n.toLowerCase()===user.username.toLowerCase()){toast('You\'re already in the trip','err');inp.value='';return;}
+  if(members.includes(n)){toast('Already added','err');inp.value='';return;}
+  members.push(n);inp.value='';renderChips();
+}
+function removeMember(n){members=members.filter(m=>m!==n);renderChips();}
+function renderChips(){
+  document.getElementById('mem-chips').innerHTML=members.map(m=>
+    `<span class="chip"><span style="font-size:11px;">👤</span>${m}<span class="rm" onclick="removeMember('${m.replace(/'/g,"\\'")}')">×</span></span>`
+  ).join('');
+}
+
+/* ── Compute user balances in a trip ── */
+function computeUserBalance(trip,username){
+  let balance=0;
+  trip.expenses.forEach(e=>{
+    if(e.payer===username) balance+=e.amount;
+    if(e.splitAmong.includes(username)) balance-=(e.amount/e.splitAmong.length);
+  });
+  return balance;
+}
+
+/* ── Create trip ── */
+function createTrip(){
+  const name=document.getElementById('trip-name').value.trim();
+  if(!name){toast('Enter a trip name','err');return;}
+  const allMembers=[user.name,...members];
+  const db=getDB();
+  const trip={
+    id:Date.now(),name,emoji:selEmoji,currency:selCurr,
+    startDate:document.getElementById('t-start').value,
+    endDate:document.getElementById('t-end').value,
+    members:allMembers,
+    ownerUsername:user.username,
+    expenses:[],
+    createdAt:new Date().toISOString()
+  };
+  db.trips.unshift(trip);saveDB(db);
+  document.getElementById('trip-name').value='';members=[];renderChips();
+  toast('Trip created! 🎉','ok');render();
+}
+
+/* ── Delete trip ── */
+function deleteTrip(id,e){
+  e.stopPropagation();
+  if(!confirm('Delete this trip and all its expenses?'))return;
+  const db=getDB();db.trips=db.trips.filter(t=>t.id!==id);saveDB(db);
+  toast('Trip deleted','err');render();
+}
+
+/* ── Open trip ── */
+function openTrip(id){
+  localStorage.setItem('ts_active_trip',id);
+  window.location.href='expenses.html';
+}
+
+/* ── Render ── */
+function render(){
+  const db=getDB();
+  // filter trips that include the current user
+  const myTrips=db.trips.filter(t=>t.members.some(m=>m.toLowerCase()===user.name.toLowerCase()||t.ownerUsername===user.username));
+
+  // Stats
+  let totalPaid=0,netBalance=0;
+  myTrips.forEach(t=>{
+    t.expenses.forEach(e=>{if(e.payer===user.name)totalPaid+=e.amount;});
+    netBalance+=computeUserBalance(t,user.name);
+  });
+  const curr=myTrips[0]?myTrips[0].currency:'₹';
+  document.getElementById('stat-trips').textContent=myTrips.length;
+  document.getElementById('stat-paid').textContent=curr+totalPaid.toFixed(0);
+  const nb=document.getElementById('stat-net');
+  nb.textContent=(netBalance>=0?'+':'')+curr+Math.abs(netBalance).toFixed(0);
+  nb.style.color=netBalance>0.5?'var(--teal)':netBalance<-0.5?'var(--orange)':'var(--muted)';
+
+  // Trips grid
+  const grid=document.getElementById('trips-grid');
+  if(!myTrips.length){
+    grid.innerHTML=`<div class="empty-trips"><div style="font-size:48px;">🌍</div><h3>No trips yet</h3><p>Create your first trip from the panel on the right.</p></div>`;
+  } else {
+    grid.innerHTML=myTrips.map(t=>{
+      const total=t.expenses.reduce((s,e)=>s+e.amount,0);
+      const bal=computeUserBalance(t,user.name);
+      const balClass=bal>0.5?'owed':bal<-0.5?'owes':'settled';
+      const balLabel=bal>0.5?`You get back ${t.currency}${bal.toFixed(2)}`:bal<-0.5?`You owe ${t.currency}${Math.abs(bal).toFixed(2)}`:'All settled ✓';
+      const isOwner=t.ownerUsername===user.username;
+      return `<div class="trip-card fade-in" onclick="openTrip(${t.id})">
+        <div class="trip-card-top">
+          <div class="trip-emoji">${t.emoji}</div>
+          <div style="flex:1;">
+            <div class="trip-name">${t.name}</div>
+            <div class="trip-sub">${t.startDate&&t.endDate?fmtDate(t.startDate)+' → '+fmtDate(t.endDate):'Dates not set'} · ${t.currency}</div>
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0;">
+            ${isOwner?'<span class="badge badge-teal">Owner</span>':''}
+            ${isOwner?`<button class="btn btn-danger" style="padding:4px 8px;font-size:12px;" onclick="deleteTrip(${t.id},event)">✕</button>`:''}
+          </div>
+        </div>
+        <div class="my-balance ${balClass}">${balLabel}</div>
+        <div class="trip-meta">
+          <div class="trip-meta-item"><strong>${t.currency}${total.toFixed(0)}</strong><span>Spent</span></div>
+          <div class="trip-meta-item"><strong>${t.expenses.length}</strong><span>Expenses</span></div>
+          <div class="trip-meta-item" style="margin-left:auto;">
+            <div class="trip-members">
+              ${t.members.slice(0,5).map((m,i)=>{
+                const colors=['#3FB950','#F78166','#58A6FF','#BC8CFF','#E3B341'];
+                const db2=getDB();
+                const u2=Object.values(db2.users).find(u=>u.name===m);
+                const c=u2?u2.color:colors[i%colors.length];
+                return `<div class="avatar av-sm" style="background:${c};color:#0D1117;font-size:9px;">${initials(m)}</div>`;
+              }).join('')}
+              ${t.members.length>5?`<div class="avatar av-sm" style="background:var(--night3);color:var(--muted);">+${t.members.length-5}</div>`:''}
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px;">${t.members.length} members</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Activity feed
+  const allExpenses=[];
+  myTrips.forEach(t=>t.expenses.forEach(e=>allExpenses.push({...e,tripName:t.name,tripEmoji:t.emoji,currency:t.currency})));
+  allExpenses.sort((a,b)=>b.id-a.id);
+  const feed=document.getElementById('activity-feed');
+  if(!allExpenses.length){
+    feed.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted);font-size:14px;">No activity yet</div>';
+  } else {
+    feed.innerHTML=allExpenses.slice(0,8).map(e=>`
+      <div class="activity-item">
+        <div class="act-icon">${e.cat?e.cat.split(' ')[0]:'💸'}</div>
+        <div class="act-body">
+          <div class="act-text"><strong>${e.payer}</strong> paid for <strong>${e.desc}</strong> in ${e.tripEmoji} ${e.tripName}</div>
+          <div class="act-time">${e.splitAmong.length} members split · ${fmtAgo(new Date(e.id).toISOString())}</div>
+        </div>
+        <div class="act-amount">${e.currency}${e.amount.toLocaleString()}</div>
+      </div>`).join('');
+  }
+}
+
+setupNav();render();
+</script>
+</body>
+</html>
